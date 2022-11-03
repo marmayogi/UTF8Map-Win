@@ -354,6 +354,57 @@ static const short aLathaTamilMap[] = {
 
 
 
+#if __GNUC__ || __CYGWIN__			// gcc
+#define sprintf_s snprintf
+#define fprintf_s fprintf
+#define memcpy_s memcpy_s
+#define strcpy_s strcpy_s
+#define strcat_s strcat_s
+#define strerror_s strerror_s
+#define _itoa_s _itoa_s
+#define _strnicmp strncasecmp 
+#define _stricmp strcasecmp 
+#define _getch getch 
+
+#endif
+
+
+#if __GNUC__ || __CYGWIN__			// gcc
+static inline char* strcpy_s(char* strDest, size_t size, const char* strSource)
+{
+	return strncpy(strDest, strSource, size);
+}
+static inline char* strcat_s(char* strDest, size_t size, const char* strSource)
+{
+	return strncat(strDest, strSource, size);
+}
+static inline void* memcpy_s(void* dest, size_t destSize, const void* src, size_t count)
+{
+	return memcpy(dest, src, count);
+}
+#if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE
+
+static inline int strerror_s(char* buffer, size_t sizeInBytes, int errnum)
+{
+	return strerror_r(errnum, buffer, sizeInBytes);
+}
+#else
+static inline char* strerror_s(char* buffer, size_t sizeInBytes, int errnum)
+{
+	//return strerror_r(errnum, buffer, sizeInBytes);			// This works but error message is not copied into buffer
+	const char* ptrerr = strerror(errnum);						// use this non-thread safe function. No other go!
+	strcpy_s(buffer, sizeInBytes, ptrerr);
+	return buffer;
+}
+#endif
+static inline char* _itoa_s(int value, char* buffer, size_t size, int radix)
+{
+	snprintf(buffer, size, "%-d", value);
+	return buffer;
+}
+#endif
+
+
 #define MAPUNICODE_H
 #endif
 

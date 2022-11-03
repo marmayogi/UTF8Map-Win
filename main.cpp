@@ -371,9 +371,94 @@ char* strps(const ELang pLan, const EMyFont pMyFont, const char* pUTF8InString, 
 	}
 	return pPSOutString;
 }
-
-int main()
+const char *getCIDfilenameWithoutPath(const char *pCIDfilename)
 {
-	fprintf(stdout, "Hello World!\n");
+	short len = static_cast<short>(strlen(pCIDfilename));
+	while (pCIDfilename[--len] && pCIDfilename[len] != '/' && pCIDfilename[len] != '\\');
+	return len ? pCIDfilename + len + 1 : pCIDfilename;
+}
+int main(int argc, char* argv[])
+{
+    //
+    // utf8map filename.t42
+    //
+    if (argc == 1 || argc > 2) {
+#if _MSC_VER			// Visual Studio
+        fprintf(stdout, "usage: utf8map filename.t42");
+#elif __GNUC__	|| __CYGWIN__		// gcc
+        fprintf(stdout, "usage: ./utf8map filename.t42");
+#endif
+        printf("\nhit any key....");	getchar();
+        return(1);				// exit with error 1
+    }
+    const char* ptr;
+    const char* strCIDFontFile = argv[1];       // ttf filename
+    if (!(ptr = strstr(strCIDFontFile, ".t42"))) {
+        fprintf(stdout, "Input file '%s' does not have file extension 't42'.", strCIDFontFile);
+        printf("\nhit any key....");	getchar();
+        return(1);				// exit with error 1
+    }
+	const char *cidFilenameNoPath = getCIDfilenameWithoutPath(strCIDFontFile);
+	// find out the language and font 
+
+	ELang lan=ELang::eZero;								// Language of the cid-keyed font passed as argument.
+	EMyFont myfont= EMyFont::eZero;						// Font name.
+	short ii = static_cast<short>(ELang::eTamil);		// start from Tamil whose index is 2.
+	do {
+		short jj = 0;
+		while (asMyFont[ii][++jj].numGlyphs) {
+			if (!_stricmp(asMyFont[ii][jj].fname, cidFilenameNoPath)) {
+				myfont = static_cast<EMyFont>(jj);
+				lan = static_cast<ELang>(ii);
+			}
+		}
+	} while (++ii <= cMaxLanguage);
+
+	if (lan == ELang::eZero || myfont == EMyFont::eZero) {
+		fprintf(stdout, "Font file '%s' is not found in the CID-Keyed font list.", strCIDFontFile);
+		printf("\nhit any key....");	getchar();
+		return(1);				// exit with error 1
+	}
+    const short lcFileNameSize = 256;
+    char psFilename[lcFileNameSize];
+    strcpy_s(psFilename, lcFileNameSize, strCIDFontFile);              // copy t42 file name
+    char* ptr2 = strstr(psFilename, ".t42");            memcpy(static_cast<void*>(ptr2 + 1), "ps", 3);       // replace ttf with ps.
+    //printf("%s...\t%s...\n", t42Filenamet, psFilename); getchar();
+
+    FILE *fcid, *fps;
+
+#if _MSC_VER			// Visual Studio
+    // open t42 file to read
+    if (fopen_s(&fcid, strCIDFontFile, "r")) {
+        printf("File name: %s\n", strCIDFontFile);
+        perror("The following error occurred");
+        return (1);
+    }
+    else printf("File %s is opened for reading\n", strCIDFontFile);
+    // open ps file to write
+    if (fopen_s(&fps, psFilename, "w")) {
+        printf("File name: %s\n", psFilename);
+        perror("The following error occurred");
+        return (1);
+    }
+    else printf("File %s is opened for writing\n", psFilename);
+
+#elif __GNUC__	|| __CYGWIN__		// gcc
+    // open t42 file to read
+    if (!(fcid = fopen(strCIDFontFile, "r"))) {
+        printf("File name: %s\n", strCIDFontFile);
+        perror("The following error occurred");
+        return (1);
+    }
+    else printf("File %s is opened for writing\n", strCIDFontFile);
+    // open ps file to write
+    if (!(fps = fopen(psFilename, "w"))) {
+        printf("File name: %s\n", psFilename);
+        perror("The following error occurred");
+        return (1);
+    }
+    else printf("File %s is opened for writing\n", psFilename);
+
+#endif
 }
 
