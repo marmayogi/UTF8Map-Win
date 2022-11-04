@@ -13,10 +13,120 @@
 #include <errno.h>
 #include "mapunicode.h"
 
+bool fileInsert(FILE* fps, const char* pFileToBeInserted)
+{
+	//
+	// Inserts a file with handle finsert into main file with handle fmain.
+	//
+	// 1. fps is the file handle into which the text of another file will be inserted.
+	// 2. finsert is the file handle from which text data will be read and inserted intto file fps.
+	//
+	FILE* fp;
+#if _MSC_VER			// Visual Studio
+	// open t42 file to read
+	if (fopen_s(&fp, pFileToBeInserted, "r")) {
+		fprintf(stdout, "File name: %s\n", pFileToBeInserted);
+		perror("The following error occurred");
+		return (false);
+	}
+	else fprintf(stdout, "File %s is opened for reading\n", pFileToBeInserted);
+#elif __GNUC__	|| __CYGWIN__		// gcc
+	// open t42 file to read
+	if (!(fp = fopen(pFileToBeInserted, "r"))) {
+		fprintf(stdout, "File name: %s\n", pFileToBeInserted);
+		perror("The following error occurred");
+		return (false);
+	}
+	else fprintf(stdout, "File %s is opened for writing\n", pFileToBeInserted);
+#endif
+	do {
+		const int ch = fgetc(fp);		// Copying file character by character
+		if (ch == EOF) break;
+		fputc(ch, fps);				// write into Postscript file.
+	} while (1);
+	return true;				// success
+}
+
+void psInitPostscript(FILE *fps)
+{
+	static const char *arrPS[] = {
+		"%!PS-Adobe-3.0",
+		"%%Pages: (atend)",
+		"%%LanguageLevel: 3",
+		"%%Creator: Marmayogi, Astrologer and Palmist, Sri Mahakali Jothida Nilayam, Coimbatore, India.",
+		"%%Title: (TTF2PostscriptCID Conversion Software)",
+		"%%DocumentPaperSizes: a4",
+		"%%Orientation: Portrait",
+		"%%DocumentMedia: Plain 595 842 80 white ()",
+		"%%EndComments",
+		"%%BeginDefaults",
+        "%%PageMedia: Plain",
+        "%%PageOrder: Ascend",
+        "%%PageOrientation: Portrait",
+		"%%EndDefaults",
+		"%----------------------------------------------------------",
+		"%%BeginProlog",
+		"%%EndProlog",
+		"%----------------------------------------------------------",
+		"%%Page: Marmayogi    1",
+		"newpath",
+		"%----------------------------------------------------------",
+		"/myHelvetica {/Helvetica findfont exch scalefont setfont} bind def",			                //  15 myHelvetica						# Helvetica is data font
+        "/myTimesRoman {/Times-Roman findfont exch scalefont setfont} bind def",		                //  15 myTimesRoman						# Times-Roman is data font
+        "/myTimesBold {/Times-Bold findfont exch scalefont setfont} bind def",		                    //  15 myTimesBold						# Times-Bold is data font
+        "%----------------------------------------------------------",
+		"/CTXT {dup stringwidth pop 3 -1 roll 2 copy lt {sub neg 2 div 4 -1 roll add 3 -1 roll} {pop pop 3 1 roll} ifelse  moveto show} bind def",	// Center text. usage: X Y Width (Text) CTX. For example: 36 300 500 (Marmayogi) CTXT
+	};
+    const short totalElements = sizeof(arrPS) / sizeof(char*);
+    short ii = -1;
+	while (++ii < totalElements) {
+        fprintf(fps, "%s\n", arrPS[ii]);
+	};
+}
+void psPageNumber(FILE* fps, const int pPageNumber)
+{
+    const int cPgNum_x = 530;						// Page number which should be written at the bootm right side. (x-coordinate)
+    const int cPgNum_y = 5;			                // Page number which should be written at the bootm right side. (y-coordinate)
+    fprintf(fps, "gsave\n");
+    fprintf(fps, "11 myTimesRoman\n");
+    fprintf(fps, "%d  %d moveto (Page) show\n", cPgNum_x, cPgNum_y);	// Page title
+    fprintf(fps, "11 myTimesBold\n");
+    fprintf(fps, "6 0 rmoveto (%d) show\n", pPageNumber);				// page number (starts from one)
+    fprintf(fps, "grestore\n");
+}
+void psWriteFooter(FILE* fps)
+{
+    static const char* psLogo = "This conversion software was designed, developed and distributed by Marmayogi, Sri Mahakali Jothida Nilayam, Coimbatore, India.";
+    const short cFooterLogo_x = 36;					// footer logo x co-ordinate
+    const short cFooterLogo_y = 5;		            // footer logo y co-ordinate
+    const short cFooterLine_x = 36;			        // footer line x co-ordinate 
+    const short cFooterLine_y = 15;	                // footer line y co-ordinate 
+    const short cLineLength = 500;					// line length in points
+    // set footer
+    fprintf(fps, "gsave\n");
+    fprintf(fps, "newpath\n");
+    fprintf(fps, "9 myTimesRoman %d %d %d (%s) CTXT\n", cFooterLogo_x, cFooterLogo_y, cLineLength, psLogo);					// write logo at footer
+    fprintf(fps, "0.5 setgray	%d %d moveto 36 %d add 0 rlineto stroke\n", cFooterLine_x, cFooterLine_y, cLineLength);		// write footer line hanging over logo
+    fprintf(fps, "grestore\n");
+}
+void psSendPageToDevice(FILE* fps)
+{
+    fprintf(fps, "showpage\n");			// print page to postscript device
+}
+void psFlushReport(FILE* fps, const short pPageNum)
+{
+    psWriteFooter(fps);
+    psPageNumber(fps, pPageNum);        // write page number
+    psSendPageToDevice(fps);            // print page to postscript device}
+}
+void psInitNextPage(FILE* fps, const int pPageOrdinal)
+{
+    fprintf(fps, "%sPage: Marmayogi %4d\n", "%%", pPageOrdinal);		// page number is made up of a label and an ordinal number
+}
 short u2ps(const ELang pLan, const EMyFont pMyFont, const uint32_t pUnicodeQuad[4], short &pCntUnicode, uint16_t pCID[3])	// Transform Unicode to Postscript character code (2 bytes CID) for Type 42 base font based on Language.
 {
 	//
-	// This function transforms Unicode Points to Postcript character identifiers (2 bytes CID).
+	// This function transforms Unicode Points to Postcript character identifiers (2 bytes character code).
 	// This function is called by strps().
 	//
 	// 1) pLan is an input parameter of type ELang supplying language of the Font.
@@ -46,13 +156,13 @@ short u2ps(const ELang pLan, const EMyFont pMyFont, const uint32_t pUnicodeQuad[
 				case EMyFont::eNoToSansTamil_Regular:				// Google's Tamil Font (Regular)
 				case EMyFont::eNoToSansTamil_Bold:					// Google's Tamil Font (Bold)
 				{
-					const uint16_t lcOffset_BasicLatin = 259;											// Basic Latin Offset w.r.t. aNotoSansTamilMap.
-					const uint16_t lcOffset_Latin_1_Supplement = 387;									// Latin-1 Supplement Offset w.r.t. aNotoSansTamilMap.
-					const uint16_t lcOffset_Latin_Extended_A = 515;										// Latin Extended-A Offset w.r.t. aNotoSansTamilMap.
-					const uint16_t lcOffset_General_Punctuation = 643;									// General Punctuation Offset w.r.t. aNotoSansTamilMap.
-					const uint16_t lcOffset_Currency_Symbols = 755;										// Currency Symbols Offset w.r.t. aNotoSansTamilMap.
-					const uint16_t lcOffset_Tamil_Ligature=128;											// Tamil_Ligature Characters Offset w.r.t. aNotoSansTamilMap.
-					const uint16_t lcOffset_கி = lcOffset_Tamil_Ligature + 32;							// Offset w.r.t. aNotoSansTamilMap.
+					const uint16_t lcOffset_BasicLatin = 259;											// Basic Latin Offset w.r.t. aNotoSansTamilMap table.
+					const uint16_t lcOffset_Latin_1_Supplement = 387;									// Latin-1 Supplement Offset w.r.t. aNotoSansTamilMap Table.
+					const uint16_t lcOffset_Latin_Extended_A = 515;										// Latin Extended-A Offset w.r.t. aNotoSansTamilMap Table.
+					const uint16_t lcOffset_General_Punctuation = 643;									// General Punctuation Offset w.r.t. aNotoSansTamilMap Table.
+					const uint16_t lcOffset_Currency_Symbols = 755;										// Currency Symbols Offset w.r.t. aNotoSansTamilMap Table.
+					const uint16_t lcOffset_Tamil_Ligature=128;											// Tamil_Ligature Characters Offset w.r.t. aNotoSansTamilMap Table.
+					const uint16_t lcOffset_கி = lcOffset_Tamil_Ligature + 32;							// Offset w.r.t. aNotoSansTamilMap Table.
 					const uint16_t lcCID_க = 18;														// CID for glyph க (U+0B95).
 					const uint16_t lcCID_க் = 77;														// CID for glyph க்.
 					const uint16_t lcCID_க்ஷ = 76;														// CID for glyph க்ஷ.
@@ -143,13 +253,13 @@ short u2ps(const ELang pLan, const EMyFont pMyFont, const uint32_t pUnicodeQuad[
 				case EMyFont::eLatha_Bold:					// Microsoft's Tamil Font (Bold)
 				default:
 				{	
-					const uint16_t lcOffset_BasicLatin = 267;											// Basic Latin Offset w.r.t. aLathaTamilMap.
-					const uint16_t lcOffset_Latin_1_Supplement = 395;									// Latin-1 Supplement Offset w.r.t. aLathaTamilMap.
-					const uint16_t lcOffset_Latin_Extended_A = 523;										// Latin Extended-A Offset w.r.t. aLathaTamilMap.
-					const uint16_t lcOffset_General_Punctuation = 651;									// General Punctuation Offset w.r.t. aLathaTamilMap.
-					const uint16_t lcOffset_Currency_Symbols = 763;										// Currency Symbols Offset w.r.t. aLathaTamilMap.
-					const uint16_t lcOffset_Tamil_Ligature=128;											// Tamil_Ligature Characters Offset w.r.t. aLathaTamilMap.
-					const uint16_t lcOffset_கி = lcOffset_Tamil_Ligature + 32;							// Offset w.r.t. aLathaTamilMap.
+					const uint16_t lcOffset_BasicLatin = 267;											// Basic Latin Offset w.r.t. aLathaTamilMap Table.
+					const uint16_t lcOffset_Latin_1_Supplement = 395;									// Latin-1 Supplement Offset w.r.t. aLathaTamilMap Table.
+					const uint16_t lcOffset_Latin_Extended_A = 523;										// Latin Extended-A Offset w.r.t. aLathaTamilMap Table.
+					const uint16_t lcOffset_General_Punctuation = 651;									// General Punctuation Offset w.r.t. aLathaTamilMap Table.
+					const uint16_t lcOffset_Currency_Symbols = 763;										// Currency Symbols Offset w.r.t. aLathaTamilMap Table.
+					const uint16_t lcOffset_Tamil_Ligature=128;											// Tamil_Ligature Characters Offset w.r.t. aLathaTamilMap Table.
+					const uint16_t lcOffset_கி = lcOffset_Tamil_Ligature + 32;							// Offset w.r.t. aLathaTamilMap Table.
 					const uint16_t lcCID_க = 66;														// CID for glyph க (U+0B95).
 					const uint16_t lcCID_க் = 116;														// CID for glyph க்.
 					const uint16_t lcCID_க்ஷ = 113;														// CID for glyph க்ஷ.
@@ -371,6 +481,16 @@ char* strps(const ELang pLan, const EMyFont pMyFont, const char* pUTF8InString, 
 	}
 	return pPSOutString;
 }
+void generatePostscriptTamil(FILE *fps, const ELang pLan, const EMyFont pMyFont)
+{
+	const short lcCharCodeBufSize = 1024;		// Character Code buffer size.
+	char bufCharCode[lcCharCodeBufSize];		// buffer to hold hex string.
+
+	fprintf(fps, "13 %s\n", asMyFont[(int)pLan][(int)pMyFont].name);		// findfont
+
+	fprintf(fps, "50 750 530 <%s> CTXT\n", strps(pLan, pMyFont, u8"தமிழ் மொழி தங்களை வரவேற்கிறது!", bufCharCode, lcCharCodeBufSize));	// Write title by centering at paper.
+	fprintf(fps, "50 700 530 <%s> CTXT\n", strps(pLan, pMyFont, u8"Tamil Language Weclomes You!", bufCharCode, lcCharCodeBufSize));	// Write title by centering at paper.
+}
 const char *getCIDfilenameWithoutPath(const char *pCIDfilename)
 {
 	short len = static_cast<short>(strlen(pCIDfilename));
@@ -388,14 +508,14 @@ int main(int argc, char* argv[])
 #elif __GNUC__	|| __CYGWIN__		// gcc
         fprintf(stdout, "usage: ./utf8map filename.t42");
 #endif
-        printf("\nhit any key....");	getchar();
-        return(1);				// exit with error 1
+		fprintf(stdout, "\nhit any key....");	getchar();
+		return(1);				// exit with error 1
     }
     const char* ptr;
     const char* strCIDFontFile = argv[1];       // ttf filename
     if (!(ptr = strstr(strCIDFontFile, ".t42"))) {
         fprintf(stdout, "Input file '%s' does not have file extension 't42'.", strCIDFontFile);
-        printf("\nhit any key....");	getchar();
+        fprintf(stdout, "\nhit any key....");	getchar();
         return(1);				// exit with error 1
     }
 	const char *cidFilenameNoPath = getCIDfilenameWithoutPath(strCIDFontFile);
@@ -416,7 +536,7 @@ int main(int argc, char* argv[])
 
 	if (lan == ELang::eZero || myfont == EMyFont::eZero) {
 		fprintf(stdout, "Font file '%s' is not found in the CID-Keyed font list.", strCIDFontFile);
-		printf("\nhit any key....");	getchar();
+		fprintf(stdout, "\nhit any key....");	getchar();
 		return(1);				// exit with error 1
 	}
     const short lcFileNameSize = 256;
@@ -430,35 +550,91 @@ int main(int argc, char* argv[])
 #if _MSC_VER			// Visual Studio
     // open t42 file to read
     if (fopen_s(&fcid, strCIDFontFile, "r")) {
-        printf("File name: %s\n", strCIDFontFile);
+        fprintf(stdout, "File name: %s\n", strCIDFontFile);
         perror("The following error occurred");
         return (1);
     }
-    else printf("File %s is opened for reading\n", strCIDFontFile);
+    else fprintf(stdout, "File %s is opened for reading\n", strCIDFontFile);
     // open ps file to write
     if (fopen_s(&fps, psFilename, "w")) {
-        printf("File name: %s\n", psFilename);
+        fprintf(stdout, "File name: %s\n", psFilename);
         perror("The following error occurred");
         return (1);
     }
-    else printf("File %s is opened for writing\n", psFilename);
+    else fprintf(stdout, "File %s is opened for writing\n", psFilename);
 
 #elif __GNUC__	|| __CYGWIN__		// gcc
     // open t42 file to read
     if (!(fcid = fopen(strCIDFontFile, "r"))) {
-        printf("File name: %s\n", strCIDFontFile);
+        fprintf(stdout, "File name: %s\n", strCIDFontFile);
         perror("The following error occurred");
         return (1);
     }
-    else printf("File %s is opened for writing\n", strCIDFontFile);
+    else fprintf(stdout, "File %s is opened for writing\n", strCIDFontFile);
     // open ps file to write
     if (!(fps = fopen(psFilename, "w"))) {
-        printf("File name: %s\n", psFilename);
+        fprintf(stdout, "File name: %s\n", psFilename);
         perror("The following error occurred");
         return (1);
     }
-    else printf("File %s is opened for writing\n", psFilename);
+    else fprintf(stdout, "File %s is opened for writing\n", psFilename);
 
 #endif
+
+	psInitPostscript(fps);				// Initialize postscript
+	fprintf(fps, "/%s {/%s findfont exch scalefont setfont} bind def\n", asMyFont[(int)lan][(int)myfont].name, asMyFont[(int)lan][(int)myfont].psname);		// findfont
+
+	switch (lan) {
+		case ELang::eTamil:					//  2. Tamil language
+		{
+			generatePostscriptTamil(fps, lan, myfont);
+			break;
+		}
+		case ELang::eHindi:					//  3. Hindi language
+		{
+			break;
+		}
+		case ELang::eMalayalam:				//  4. Malayalam language
+		{
+			break;
+		}
+		case ELang::eTelugu:				//  5. Telugu language
+		{
+			break;
+		}
+		case ELang::eKannada:				//  6. Kannada language
+		{
+			break;
+		}
+		case ELang::eMarathi:				//  7. Marathi language
+		{
+			break;
+		}
+		case ELang::eGujarati:				//  8. Gujarati language
+		{
+			break;
+		}
+		case ELang::eOdia:					//  9. Odia language
+		{
+			break;
+		}
+		case ELang::ePunjabi:				//  10. Punjabi language
+		{
+			break;
+		}
+		case ELang::eBengali:				//  11. Bengali language
+		{
+			break;
+		}
+		case ELang::eAssamese:				//  12. Assamese language
+		{
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+	fclose(fps);
 }
 
