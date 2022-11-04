@@ -24,6 +24,9 @@ static const ELang aLanguage[cMaxLanguage + 1] = { ELang::eZero,
 	ELang::eEnglish,	ELang::eTamil,		ELang::eHindi,				ELang::eMalayalam,  ELang::eTelugu, ELang::eKannada,
 	ELang::eMarathi,	ELang::eGujarati,	ELang::eOdia,				ELang::ePunjabi,	ELang::eBengali, ELang::eAssamese,
 };
+static const char* asLanguage[cMaxLanguage+1] = {
+	NULL,		"English",	"Tamil",	"Hindi",				"Malayalam",	"Telugu",	"Kannada",			"Marathi","Gujarati","Odia",		"Punjabi", "Bengali", "Assamese"
+};
 
 typedef struct SUnicodeBlock {
 	ELang lan;									// Language supported by MY Software.
@@ -61,68 +64,68 @@ enum class EMyFont : char {
 	eLatha_Bold=4,						// Microsoft's Tamil Font (Bold)
 };
 static const SMyFont asMyFont[cMaxLanguage + 1][10+2] = {		// Maximum 10 font files for each language are supported. If more files are there then change the number 10.
-	{NULL, },
+	{0,},
 	// 1. English language. Entires are not allowed since this is meant for Indian Languages.
-	{NULL, },											
+	{0,},											
 	// 2. Tamil language. After all Font names are entered, terminate with NULL address.
 	{
 	//	NumGlyphs	name			Postscript name					file name in the disk.
-		{NULL,},																							// Always begins with a NULL entry
+		{0,},																								// Always begins with a NULL entry
 		{534, "myNotoTamil",		"NotoSansTamil-Regular",		"NotoSansTamil-Regular.t42"},			// Google's Tamil Font (Regular)
 		{534, "myNotoTamilBold",	"NotoSansTamil-Bold",			"NotoSansTamil-Bold.t42"},				// Google's Tamil Font (Bold)
 		{434, "myLathaTamil",		"Latha",						"latha.t42"},							// Microsoft's Tamil Font (Regular)
 		{434, "myLathaTamilBold",	"Latha-Bold",					"lathab.t42"},							// Microsoft's Tamil Font (Bold)
-		{NULL},																								// Terminate with a NULL entry.
+		{0},																								// Terminate with a NULL entry.
 	},
 	// 3. Hindi language. After all Font names are entered, terminate with NULL entry.
 	{
-		{NULL,},											// Always begins with a NULL entry
-		{NULL, },											// Terminate with a NULL entry.
+		{0,},											// Always begins with a NULL entry
+		{0,},											// Terminate with a NULL entry.
 	},
 	// 4. Malayalam language. After all Font names are entered, terminate with NULL entry.
 	{
-		{NULL,},											// Always begins with a NULL entry
-		{NULL, },											// Terminate with a NULL entry.
+		{0,},											// Always begins with a NULL entry
+		{0,},											// Terminate with a NULL entry.
 	},
 	// 5. Telugu language. After all Font names are entered, terminate with NULL entry.
 	{
-		{NULL,},											// Always begins with a NULL entry
-		{NULL, },											// Terminate with a NULL entry.
+		{0,},											// Always begins with a NULL entry
+		{0,},											// Terminate with a NULL entry.
 	},
 	// 6. Kannada language. After all Font names are entered, terminate with NULL entry.
 	{
-		{NULL,},											// Always begins with a NULL entry
-		{NULL, },											// Terminate with a NULL entry.
+		{0,},											// Always begins with a NULL entry
+		{0,},											// Terminate with a NULL entry.
 	},
 	// 7. Marathi language. After all Font names are entered, terminate with NULL entry.
 	{
-		{NULL,},											// Always begins with a NULL entry
-		{NULL, },											// Terminate with a NULL entry.
+		{0,},											// Always begins with a NULL entry
+		{0,},											// Terminate with a NULL entry.
 	},
 	// 8. Gujarati language. After all Font names are entered, terminate with NULL entry.
 	{
-		{NULL,},											// Always begins with a NULL entry
-		{NULL, },											// Terminate with a NULL entry.
+		{0,},											// Always begins with a NULL entry
+		{0,},											// Terminate with a NULL entry.
 	},
 	// 9. Odia language. After all Font names are entered, terminate with NULL entry.
 	{
-		{NULL,},											// Always begins with a NULL entry
-		{NULL, },											// Terminate with a NULL entry.
+		{0,},											// Always begins with a NULL entry
+		{0,},											// Terminate with a NULL entry.
 	},
 	// 10. Punjabi language. After all Font names are entered, terminate with NULL entry.
 	{
-		{NULL,},											// Always begins with a NULL entry
-		{NULL, },											// Terminate with a NULL entry.
+		{0,},											// Always begins with a NULL entry
+		{0,},											// Terminate with a NULL entry.
 	},
 	// 11. Bengali language. After all Font names are entered, terminate with NULL entry.
 	{
-		{NULL,},											// Always begins with a NULL entry
-		{NULL, },											// Terminate with a NULL entry.
+		{0,},											// Always begins with a NULL entry
+		{0,},											// Terminate with a NULL entry.
 	},
 	// 12. Assamese language. After all Font names are entered, terminate with NULL entry.
 	{
-		{NULL,},											// Always begins with a NULL entry
-		{NULL, },											// Terminate with a NULL entry.
+		{0,},											// Always begins with a NULL entry
+		{0,},											// Terminate with a NULL entry.
 	},
 };
 // This maps unicode to CID
@@ -351,6 +354,7 @@ static const short aLathaTamilMap[] = {
 //																						Ð		Ñ		Ò		Ó		Ô		Õ		Ö		×		Ø		Ù		Ú		Û		Ü		Ý		Þ		ß	
 
 };
+
 
 
 

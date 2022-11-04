@@ -96,7 +96,7 @@ void psPageNumber(FILE* fps, const int pPageNumber)
 }
 void psWriteFooter(FILE* fps)
 {
-    static const char* psLogo = "This conversion software was designed, developed and distributed by Marmayogi, Sri Mahakali Jothida Nilayam, Coimbatore, India.";
+    static const char* psLogo = "This software was designed, developed and distributed by Marmayogi, Sri Mahakali Jothida Nilayam, Coimbatore, India.";
     const short cFooterLogo_x = 36;					// footer logo x co-ordinate
     const short cFooterLogo_y = 5;		            // footer logo y co-ordinate
     const short cFooterLine_x = 36;			        // footer line x co-ordinate 
@@ -126,7 +126,7 @@ void psInitNextPage(FILE* fps, const int pPageOrdinal)
 short u2ps(const ELang pLan, const EMyFont pMyFont, const uint32_t pUnicodeQuad[4], short &pCntUnicode, uint16_t pCID[3])	// Transform Unicode to Postscript character code (2 bytes CID) for Type 42 base font based on Language.
 {
 	//
-	// This function transforms Unicode Points to Postcript character identifiers (2 bytes character code).
+	// This function transforms Unicode Points to Postcript character identifiers (2 bytes CID).
 	// This function is called by strps().
 	//
 	// 1) pLan is an input parameter of type ELang supplying language of the Font.
@@ -148,6 +148,11 @@ short u2ps(const ELang pLan, const EMyFont pMyFont, const uint32_t pUnicodeQuad[
 	//
 
 	if (pLan < ELang::eEnglish || pLan > aLanguage[cMaxLanguage]) return 0;		// Language is out of bounds.
+	if (!asMyFont[(int)pLan][(int)pMyFont].numGlyphs) return 0;					// Font is not present in CID-Keyed font list.
+
+	//printf("Entering.......pUnicodeQuad[0]=0x%04X\n", pUnicodeQuad[0]);
+	for (short kk = 0; kk < pCntUnicode; kk++) { printf("\tuni[%d]=0X%04x", kk, pUnicodeQuad[kk]); }  printf("\n"); //getchar();
+
 	short cntCID = 0;															// Number of CIDs passed out through parameter pCID. This varies between 1 and 4.
 	switch (pLan) {
 		case ELang::eTamil:					//  2. Tamil language
@@ -156,13 +161,14 @@ short u2ps(const ELang pLan, const EMyFont pMyFont, const uint32_t pUnicodeQuad[
 				case EMyFont::eNoToSansTamil_Regular:				// Google's Tamil Font (Regular)
 				case EMyFont::eNoToSansTamil_Bold:					// Google's Tamil Font (Bold)
 				{
-					const uint16_t lcOffset_BasicLatin = 259;											// Basic Latin Offset w.r.t. aNotoSansTamilMap table.
-					const uint16_t lcOffset_Latin_1_Supplement = 387;									// Latin-1 Supplement Offset w.r.t. aNotoSansTamilMap Table.
-					const uint16_t lcOffset_Latin_Extended_A = 515;										// Latin Extended-A Offset w.r.t. aNotoSansTamilMap Table.
-					const uint16_t lcOffset_General_Punctuation = 643;									// General Punctuation Offset w.r.t. aNotoSansTamilMap Table.
-					const uint16_t lcOffset_Currency_Symbols = 755;										// Currency Symbols Offset w.r.t. aNotoSansTamilMap Table.
-					const uint16_t lcOffset_Tamil_Ligature=128;											// Tamil_Ligature Characters Offset w.r.t. aNotoSansTamilMap Table.
-					const uint16_t lcOffset_கி = lcOffset_Tamil_Ligature + 32;							// Offset w.r.t. aNotoSansTamilMap Table.
+					uint16_t cid_1;																		// CID corresponding to unicode point pUnicodeQuad[0].
+					const uint16_t lcOffset_BasicLatin = 259;											// Basic Latin Offset w.r.t. aNotoSansTamilMap.
+					const uint16_t lcOffset_Latin_1_Supplement = 387;									// Latin-1 Supplement Offset w.r.t. aNotoSansTamilMap.
+					const uint16_t lcOffset_Latin_Extended_A = 515;										// Latin Extended-A Offset w.r.t. aNotoSansTamilMap.
+					const uint16_t lcOffset_General_Punctuation = 643;									// General Punctuation Offset w.r.t. aNotoSansTamilMap.
+					const uint16_t lcOffset_Currency_Symbols = 755;										// Currency Symbols Offset w.r.t. aNotoSansTamilMap.
+					const uint16_t lcOffset_Tamil_Ligature=128;											// Tamil_Ligature Characters Offset w.r.t. aNotoSansTamilMap.
+					const uint16_t lcOffset_கி = lcOffset_Tamil_Ligature + 32;							// Offset w.r.t. aNotoSansTamilMap.
 					const uint16_t lcCID_க = 18;														// CID for glyph க (U+0B95).
 					const uint16_t lcCID_க் = 77;														// CID for glyph க்.
 					const uint16_t lcCID_க்ஷ = 76;														// CID for glyph க்ஷ.
@@ -172,8 +178,7 @@ short u2ps(const ELang pLan, const EMyFont pMyFont, const uint32_t pUnicodeQuad[
 					const uint16_t lcCID_ெ = 46;														// CID for glyph ெ (U+0BC6)
 					const uint16_t lcRangeOffset_1 = pUnicodeQuad[0] - aUnicode[(int)pLan].blockBeg;	// CID corresponding to unicode point pUnicodeQuad[0].
 					const uint16_t lcRangeOffset_2 = pCntUnicode > 1 ? pUnicodeQuad[1] - aUnicode[(int)pLan].blockBeg : 0;	// CID corresponding to unicode point pUnicodeQuad[1].
-					const uint16_t cid_1 = aNotoSansTamilMap[lcRangeOffset_1];							// CID corresponding to unicode point pUnicodeQuad[0].
-					const uint16_t cid_2 = aNotoSansTamilMap[lcRangeOffset_2];							// CID corresponding to unicode point pUnicodeQuad[1].
+					const bool isTamilBlock = pUnicodeQuad[0] >= aUnicode[(int)ELang::eTamil].blockBeg && pUnicodeQuad[0] < aUnicode[(int)ELang::eTamil].blockEnd;	// Tamil
 					const bool isBasicLatin = pUnicodeQuad[0] >= aUnicode[(int)ELang::eEng].blockBeg && pUnicodeQuad[0] < aUnicode[(int)ELang::eEng].blockEnd/2;	// Basic Latin
 					const bool isLatin_1_Supplement = pUnicodeQuad[0] >= 0x00A0 && pUnicodeQuad[0] <= 0x00FF;	// Latin-1 Supplement
 					const bool isLatin_Extended_A = pUnicodeQuad[0] >= 0x0100 && pUnicodeQuad[0] <= 0x017F;		// Latin Extended-A
@@ -188,6 +193,8 @@ short u2ps(const ELang pLan, const EMyFont pMyFont, const uint32_t pUnicodeQuad[
 					const bool isVowelSign_4 = pCntUnicode > 1 && pUnicodeQuad[1] >= 0x0BC6 && pUnicodeQuad[1] <= 0x0BC8;	// Consonant ending with ெ, 	ே and ை
 					const bool isVowelSign_5 = pCntUnicode > 1 && pUnicodeQuad[1] >= 0x0BCA && pUnicodeQuad[1] <= 0x0BCB;	// Consonant ending with ொ,and ோ 
 					const bool isVowelSign_6 = pCntUnicode > 1 && pUnicodeQuad[1] == 0x0BCC;								// Consonant ending with ௌ
+					if (isTamilBlock) cid_1 = aNotoSansTamilMap[lcRangeOffset_1];											// CID corresponding to unicode point pUnicodeQuad[0].
+					//if (isBasicLatin) printf("isBasicLatin=%d\n", isBasicLatin);
 					//for (short kk = 0; kk < pCntUnicode; kk++) { printf("\tuni[%d]=0X%04x", kk, pUnicodeQuad[kk]);}  printf("\n"); //getchar();
 					if (isBasicLatin) {// Basic Latin Block is from U+0000 to U+00FF, but allowed range is from U+0000 to U+0080.
 						const uint16_t offset = pUnicodeQuad[0] - aUnicode[(int)ELang::eEng].blockBeg;
@@ -210,7 +217,18 @@ short u2ps(const ELang pLan, const EMyFont pMyFont, const uint32_t pUnicodeQuad[
 						pCID[0] = aNotoSansTamilMap[lcOffset_Currency_Symbols + offset];		cntCID = 1;				pCntUnicode -= 1;
 					}
 					else if (isக்ஷ) {// க்ஷ
-						pCID[0] = lcCID_க்ஷ;		cntCID = 1;				pCntUnicode -= 3;
+						if (pCntUnicode == 4 && pUnicodeQuad[3] >= 0x0BC6 && pUnicodeQuad[3] <= 0x0BC8) {// 	ெ,	ே and ை
+							pCID[0] = lcCID_ெ + pUnicodeQuad[3] - 0x0BC6;		pCID[1] = lcCID_க்ஷ;		cntCID = 2;				pCntUnicode -= 4;
+						}
+						else if (pCntUnicode == 4 && pUnicodeQuad[3] >= 0x0BCA && pUnicodeQuad[3] <= 0x0BCB) {// 	ொ and ோ
+							pCID[0] = lcCID_ெ + pUnicodeQuad[3] - 0x0BCA;		pCID[1] = lcCID_க்ஷ;		pCID[2] = lcCID_ா;		cntCID = 3;		pCntUnicode -= 4;
+						}
+						else if (pCntUnicode == 4 && pUnicodeQuad[3] == 0x0BCC) {// 	ௌ
+							pCID[0] = lcCID_ெ;		pCID[1] = lcCID_க்ஷ;		pCID[2] = lcCID_ௗ;	cntCID = 3;				pCntUnicode -= 4;
+						}
+						else {
+							pCID[0] = lcCID_க்ஷ;		cntCID = 1;				pCntUnicode -= 3;
+						}
 					}
 					else if (isஸ்ரீ) {// ஸ்ரீ
 						pCID[0] = lcCID_ஸ்ரீ;			cntCID = 1;				pCntUnicode -= 4;
@@ -220,6 +238,7 @@ short u2ps(const ELang pLan, const EMyFont pMyFont, const uint32_t pUnicodeQuad[
 						pCID[0] = lcCID_க் + offsetFrom_க;					cntCID = 1;		pCntUnicode -= 2;
 					}
 					else if (isconsonant && isVowelSign_2) {// Kaal - ா
+						uint16_t cid_2 = aNotoSansTamilMap[lcRangeOffset_2];	// CID corresponding to unicode point pUnicodeQuad[1].
 						pCID[0] = cid_1;		pCID[1] = cid_2;			cntCID = 2;		pCntUnicode -= 2;
 					}
 					else if (isconsonant && isVowelSign_3) {//	ி,	ீ,	ு 	and ூ
@@ -231,6 +250,7 @@ short u2ps(const ELang pLan, const EMyFont pMyFont, const uint32_t pUnicodeQuad[
 							pCID[0] = aNotoSansTamilMap[offset];		cntCID = 1;
 						}
 						else {
+							uint16_t cid_2 = aNotoSansTamilMap[lcRangeOffset_2];	// CID corresponding to unicode point pUnicodeQuad[1].
 							pCID[0] = cid_1;		pCID[1] = cid_2;		cntCID = 2;
 						}
 						pCntUnicode -= 2;
@@ -242,7 +262,7 @@ short u2ps(const ELang pLan, const EMyFont pMyFont, const uint32_t pUnicodeQuad[
 						pCID[0] = lcCID_ெ + pUnicodeQuad[1] - 0x0BCA;		pCID[1] = cid_1;		pCID[2] = lcCID_ா;		cntCID = 3;		pCntUnicode -= 2;
 					}
 					else if (isconsonant && isVowelSign_6) {// 	ௌ
-						pCID[0] = lcCID_ெ;									pCID[1] = cid_1;		pCID[2] = lcCID_ௗ;	cntCID = 3;		pCntUnicode -= 2;
+						pCID[0] = lcCID_ெ;								pCID[1] = cid_1;		pCID[2] = lcCID_ௗ;	cntCID = 3;		pCntUnicode -= 2;
 					}
 					else {
 						pCID[0] = cid_1;				cntCID = 1;			pCntUnicode -= 1;
@@ -253,24 +273,27 @@ short u2ps(const ELang pLan, const EMyFont pMyFont, const uint32_t pUnicodeQuad[
 				case EMyFont::eLatha_Bold:					// Microsoft's Tamil Font (Bold)
 				default:
 				{	
-					const uint16_t lcOffset_BasicLatin = 267;											// Basic Latin Offset w.r.t. aLathaTamilMap Table.
-					const uint16_t lcOffset_Latin_1_Supplement = 395;									// Latin-1 Supplement Offset w.r.t. aLathaTamilMap Table.
-					const uint16_t lcOffset_Latin_Extended_A = 523;										// Latin Extended-A Offset w.r.t. aLathaTamilMap Table.
-					const uint16_t lcOffset_General_Punctuation = 651;									// General Punctuation Offset w.r.t. aLathaTamilMap Table.
-					const uint16_t lcOffset_Currency_Symbols = 763;										// Currency Symbols Offset w.r.t. aLathaTamilMap Table.
-					const uint16_t lcOffset_Tamil_Ligature=128;											// Tamil_Ligature Characters Offset w.r.t. aLathaTamilMap Table.
-					const uint16_t lcOffset_கி = lcOffset_Tamil_Ligature + 32;							// Offset w.r.t. aLathaTamilMap Table.
+					uint16_t cid_1;																		// CID corresponding to unicode point pUnicodeQuad[0].
+					const uint16_t lcOffset_BasicLatin = 267;											// Basic Latin Offset w.r.t. aLathaTamilMap.
+					const uint16_t lcOffset_Latin_1_Supplement = 395;									// Latin-1 Supplement Offset w.r.t. aLathaTamilMap.
+					const uint16_t lcOffset_Latin_Extended_A = 523;										// Latin Extended-A Offset w.r.t. aLathaTamilMap.
+					const uint16_t lcOffset_General_Punctuation = 651;									// General Punctuation Offset w.r.t. aLathaTamilMap.
+					const uint16_t lcOffset_Currency_Symbols = 763;										// Currency Symbols Offset w.r.t. aLathaTamilMap.
+					const uint16_t lcOffset_Tamil_Ligature=128;											// Tamil_Ligature Characters Offset w.r.t. aLathaTamilMap.
+					const uint16_t lcOffset_கி = lcOffset_Tamil_Ligature + 32;							// Offset w.r.t. aLathaTamilMap.
 					const uint16_t lcCID_க = 66;														// CID for glyph க (U+0B95).
 					const uint16_t lcCID_க் = 116;														// CID for glyph க்.
+					const uint16_t lcCID_ஶ = 431;														// CID for glyph ஶ	(U+0BB6).
+					const uint16_t lcCID_ஶ் = 432;														// CID for glyph ஶ	(U+0BB6).
 					const uint16_t lcCID_க்ஷ = 113;														// CID for glyph க்ஷ.
 					const uint16_t lcCID_ஸ்ரீ = 188;														// CID for glyph ஸ்ரீ.
 					const uint16_t lcCID_ா = 88;														// CID for glyph ா (U+0BBE)
 					const uint16_t lcCID_ௗ = 100;														// CID for glyph ௗ (U+0BD7)
 					const uint16_t lcCID_ெ = 93;														// CID for glyph ெ (U+0BC6)
+
 					const uint16_t lcRangeOffset_1 = pUnicodeQuad[0] - aUnicode[(int)pLan].blockBeg;	// CID corresponding to unicode point pUnicodeQuad[0].
 					const uint16_t lcRangeOffset_2 = pCntUnicode > 1 ? pUnicodeQuad[1] - aUnicode[(int)pLan].blockBeg : 0;	// CID corresponding to unicode point pUnicodeQuad[1].
-					const uint16_t cid_1 = aLathaTamilMap[lcRangeOffset_1];								// CID corresponding to unicode point pUnicodeQuad[0].
-					const uint16_t cid_2 = aLathaTamilMap[lcRangeOffset_2];								// CID corresponding to unicode point pUnicodeQuad[1].
+					const bool isTamilBlock = pUnicodeQuad[0] >= aUnicode[(int)ELang::eTamil].blockBeg && pUnicodeQuad[0] < aUnicode[(int)ELang::eTamil].blockEnd;	// Tamil
 					const bool isBasicLatin = pUnicodeQuad[0] >= aUnicode[(int)ELang::eEng].blockBeg && pUnicodeQuad[0] < aUnicode[(int)ELang::eEng].blockEnd/2;	// Basic Latin
 					const bool isLatin_1_Supplement = pUnicodeQuad[0] >= 0x00A0 && pUnicodeQuad[0] <= 0x00FF;	// Latin-1 Supplement
 					const bool isLatin_Extended_A = pUnicodeQuad[0] >= 0x0100 && pUnicodeQuad[0] <= 0x017F;		// Latin Extended-A
@@ -285,8 +308,9 @@ short u2ps(const ELang pLan, const EMyFont pMyFont, const uint32_t pUnicodeQuad[
 					const bool isVowelSign_4 = pCntUnicode > 1 && pUnicodeQuad[1] >= 0x0BC6 && pUnicodeQuad[1] <= 0x0BC8;	// Consonant ending with ெ, 	ே and ை
 					const bool isVowelSign_5 = pCntUnicode > 1 && pUnicodeQuad[1] >= 0x0BCA && pUnicodeQuad[1] <= 0x0BCB;	// Consonant ending with ொ,and ோ 
 					const bool isVowelSign_6 = pCntUnicode > 1 && pUnicodeQuad[1] == 0x0BCC;								// Consonant ending with ௌ
-					printf("isVowelSign_5=%d\n", isVowelSign_5);
-					for (short kk = 0; kk < pCntUnicode; kk++) { printf("\tuni[%d]=0X%04x", kk, pUnicodeQuad[kk]);}  printf("\n"); //getchar();
+					if (isTamilBlock) cid_1 = aLathaTamilMap[lcRangeOffset_1];												// CID corresponding to unicode point pUnicodeQuad[0].
+					//printf("isVowelSign_5=%d\n", isVowelSign_5);
+					//for (short kk = 0; kk < pCntUnicode; kk++) { printf("\tuni[%d]=0X%04x", kk, pUnicodeQuad[kk]);}  printf("\n"); //getchar();
 					if (isBasicLatin) {// Basic Latin Block is from U+0000 to U+00FF, but allowed range is from U+0000 to U+0080.
 						const uint16_t offset = pUnicodeQuad[0] - aUnicode[(int)ELang::eEng].blockBeg;
 						pCID[0] = aLathaTamilMap[lcOffset_BasicLatin + offset];				cntCID = 1;				pCntUnicode -= 1;
@@ -308,28 +332,51 @@ short u2ps(const ELang pLan, const EMyFont pMyFont, const uint32_t pUnicodeQuad[
 						pCID[0] = aLathaTamilMap[lcOffset_Currency_Symbols + offset];		cntCID = 1;				pCntUnicode -= 1;
 					}
 					else if (isக்ஷ) {// க்ஷ
-						pCID[0] = lcCID_க்ஷ;		cntCID = 1;				pCntUnicode -= 3;
+						if (pCntUnicode == 4 && pUnicodeQuad[3] >= 0x0BC6 && pUnicodeQuad[3] <= 0x0BC8) {// 	ெ,	ே and ை
+							pCID[0] = lcCID_ெ + pUnicodeQuad[3] - 0x0BC6;		pCID[1] = lcCID_க்ஷ;		cntCID = 2;				pCntUnicode -= 4;
+						}
+						else if (pCntUnicode == 4 && pUnicodeQuad[3] >= 0x0BCA && pUnicodeQuad[3] <= 0x0BCB) {// 	ொ and ோ
+							pCID[0] = lcCID_ெ + pUnicodeQuad[3] - 0x0BCA;		pCID[1] = lcCID_க்ஷ;		pCID[2] = lcCID_ா;		cntCID = 3;		pCntUnicode -= 4;
+						}
+						else if (pCntUnicode == 4 && pUnicodeQuad[3] == 0x0BCC) {// 	ௌ
+							pCID[0] = lcCID_ெ;		pCID[1] = lcCID_க்ஷ;		pCID[2] = lcCID_ௗ;	cntCID = 3;				pCntUnicode -= 4;
+						}
+						else {
+							pCID[0] = lcCID_க்ஷ;		cntCID = 1;				pCntUnicode -= 3;
+						}
 					}
 					else if (isஸ்ரீ) {// ஸ்ரீ
 						pCID[0] = lcCID_ஸ்ரீ;			cntCID = 1;				pCntUnicode -= 4;
 					}
 					else if (isconsonant && isVowelSign_1) {// Pulli - ்
-						const short offsetFrom_க = cid_1 - lcCID_க;			// offset w.r.t letter க.
-						pCID[0] = lcCID_க் + offsetFrom_க;					cntCID = 1;		pCntUnicode -= 2;
+						if (cid_1 == lcCID_ஶ) pCID[0] = lcCID_ஶ்;			// CID for glyph ஶ்
+						else {
+							const short offsetFrom_க = cid_1 - lcCID_க;		// offset w.r.t letter க.
+							pCID[0] = lcCID_க் + offsetFrom_க;
+						}
+						cntCID = 1;		pCntUnicode -= 2;
 					}
 					else if (isconsonant && isVowelSign_2) {// Kaal - ா
+						uint16_t cid_2 = aLathaTamilMap[lcRangeOffset_2];	// CID corresponding to unicode point pUnicodeQuad[1].
 						pCID[0] = cid_1;		pCID[1] = cid_2;			cntCID = 2;		pCntUnicode -= 2;
 					}
 					else if (isconsonant && isVowelSign_3) {//	ி,	ீ,	ு 	and ூ
-						const short idx = pUnicodeQuad[1] - 0x0BBF;			//	ி -> 0x0BBF
-						const short offsetFrom_க = cid_1 - lcCID_க;			// offset w.r.t letter க.
-						const short offset = offsetFrom_க * 4 + idx + lcOffset_கி;
-						//printf("idx=%d offsetFrom=%d offset=%d\n", idx, offsetFrom_க, offset);
-						if (aLathaTamilMap[offset]) {
-							pCID[0] = aLathaTamilMap[offset];		cntCID = 1;
+						if (cid_1 == lcCID_ஶ) {
+							uint16_t cid_2 = aLathaTamilMap[lcRangeOffset_2];	// CID corresponding to unicode point pUnicodeQuad[1].
+							pCID[0] = cid_1;		pCID[1] = cid_2;		cntCID = 2;
 						}
 						else {
-							pCID[0] = cid_1;		pCID[1] = cid_2;		cntCID = 2;
+							const short idx = pUnicodeQuad[1] - 0x0BBF;			//	ி -> 0x0BBF
+							const short offsetFrom_க = cid_1 - lcCID_க;			// offset w.r.t letter க.
+							const short offset = offsetFrom_க * 4 + idx + lcOffset_கி;
+							//printf("idx=%d offsetFrom=%d offset=%d\n", idx, offsetFrom_க, offset);
+							if (aLathaTamilMap[offset]) {
+								pCID[0] = aLathaTamilMap[offset];		cntCID = 1;
+							}
+							else {
+								uint16_t cid_2 = aLathaTamilMap[lcRangeOffset_2];	// CID corresponding to unicode point pUnicodeQuad[1].
+								pCID[0] = cid_1;		pCID[1] = cid_2;		cntCID = 2;
+							}
 						}
 						pCntUnicode -= 2;
 					}
@@ -412,7 +459,10 @@ char* strps(const ELang pLan, const EMyFont pMyFont, const char* pUTF8InString, 
 	//
 
 	pPSOutString[0] = 0;			// terminate with a null character.
-	if (pLan < ELang::eEnglish || pLan > aLanguage[cMaxLanguage]) {
+	if (pLan < ELang::eEnglish || pLan > aLanguage[cMaxLanguage]) {			// Language is out of bounds.
+		return pPSOutString;		// Return NULL terminated string.
+	}
+	if (!asMyFont[(int)pLan][(int)pMyFont].numGlyphs) {						// Font is not present in CID-Keyed font list.
 		return pPSOutString;		// Return NULL terminated string.
 	}
 	if (pLan == ELang::eEnglish) {
@@ -461,7 +511,7 @@ char* strps(const ELang pLan, const EMyFont pMyFont, const char* pUTF8InString, 
 		if (++cntUnicode < 4 && (ii+1) < total) continue;					// Generate atmost 4 consecutive unicode points.
 		uint16_t cid[3] = { 0 };											// Maximum 3 CIDs needed for ligatures or conjuncts.
 	Label_Repeat:
-		//printf("before: cnt=%d\n", cntUnicode);
+		printf("before: ii=%d cnt=%d\n", (short)ii, cntUnicode);
 		const short cntUnicodeSave = cntUnicode;							// Take a copy.
 		const short cntCID = u2ps(pLan, pMyFont, unicodeQuad, cntUnicode, cid);	// Count of CIDs present in the cid array. This value could be either 1, 2, 3 or 4.
 		if (!cntCID) break;													// Error. Mostly pFontName does not match with registered font names.
@@ -469,27 +519,71 @@ char* strps(const ELang pLan, const EMyFont pMyFont, const char* pUTF8InString, 
 			if ((len + 2) >= pPSOutputStringSize) break;					// Insufficient pPSOutputStringSize to store character code. Stop processing and return already processed string.
 			sprintf_s(pPSOutString+len, pPSOutputStringSize-len, "%04x", cid[kk]);		len = strlen(pPSOutString);
 		}
-		//printf("after: cnt=%d\n", cntUnicode);
+		printf("after: cnt=%d\n", cntUnicode);
 		if (cntUnicode) {
 			const short consumedUnicode = cntUnicodeSave - cntUnicode;		// Number of unicode points consumed.
 			for (short kk = 0; kk < cntUnicode; kk++) {
 				unicodeQuad[kk] = unicodeQuad[kk+consumedUnicode];			// Store Only unicode points which are not consumed.
+				//printf("Quad[%d]=0x%04X\t%s", kk, unicodeQuad[kk], kk == cntUnicode - 1 ? "\n": "");
 			}
 		}
 		if (ii + 1 == total && cntUnicode) goto Label_Repeat;
-		//printf("%2d) 0X%04x %4d %3u\n", (short)ii, unicode, unicode , *(str - 1) & 0xff);
+		printf("%2d) 0X%04x %4d %3u\n", (short)ii, unicode, unicode , *(pPSOutString - 1) & 0xff);
 	}
 	return pPSOutString;
 }
 void generatePostscriptTamil(FILE *fps, const ELang pLan, const EMyFont pMyFont)
 {
-	const short lcCharCodeBufSize = 1024;		// Character Code buffer size.
+	int pagenum = 0;                                                // Initialize page numbers.
+	const short lcCharCodeBufSize = 5000;		// Character Code buffer size.
 	char bufCharCode[lcCharCodeBufSize];		// buffer to hold hex string.
+	//printf("lan=%d myfont=%d %s\n", (int)pLan, (int)pMyFont, asMyFont[(int)pLan][(int)pMyFont].name);
 
 	fprintf(fps, "13 %s\n", asMyFont[(int)pLan][(int)pMyFont].name);		// findfont
+	goto Label_Skip;
+Label_Skip:
+	fprintf(fps, "150 775 moveto <%s> show\n", strps(pLan, pMyFont, u8"தமிழ் மொழி தங்களை வரவேற்கிறது!", bufCharCode, lcCharCodeBufSize));	// Write title by centering at paper.
+	fprintf(fps, "180 750 moveto <%s> show\n", strps(pLan, pMyFont, u8"Tamil Language Weclomes You!", bufCharCode, lcCharCodeBufSize));	// Write title by centering at paper.
+	fprintf(fps, "32 740 moveto %d 0 rlineto stroke\n", 548);									// Horizontal line
+	fprintf(fps, "32 720 moveto <%s> show\n", strps(pLan, pMyFont, u8"உயிர் எழுத்துக்கள் (Vowels): ", bufCharCode, lcCharCodeBufSize));	// Write title by centering at paper.
+	fprintf(fps, "50 700 moveto <%s> show\n", strps(pLan, pMyFont, u8"அ ஆ இ ஈ உ ஊ எ ஏ ஐ ஒ ஓ ஔ", bufCharCode, lcCharCodeBufSize));	// Write title by centering at paper.
 
-	fprintf(fps, "50 750 530 <%s> CTXT\n", strps(pLan, pMyFont, u8"தமிழ் மொழி தங்களை வரவேற்கிறது!", bufCharCode, lcCharCodeBufSize));	// Write title by centering at paper.
-	fprintf(fps, "50 700 530 <%s> CTXT\n", strps(pLan, pMyFont, u8"Tamil Language Weclomes You!", bufCharCode, lcCharCodeBufSize));	// Write title by centering at paper.
+	fprintf(fps, "32 670 moveto <%s> show\n", strps(pLan, pMyFont, u8"மெய் எழுத்துக்கள் (Consonants): ", bufCharCode, lcCharCodeBufSize));	// List of Consonants.
+	fprintf(fps, "50 650 moveto <%s> show\n", strps(pLan, pMyFont, u8"க் ங் ச் ஞ் ட் ண் த் ந் ன் ப் ம் ய் ர் ற் ல் ள் ழ் வ் ஶ் ஜ் ஷ் ஸ் ஹ் க்ஷ்", bufCharCode, lcCharCodeBufSize));	// Consonants.
+
+	fprintf(fps, "32 620 moveto <%s> show\n", strps(pLan, pMyFont, u8"உயிர்மெய் எழுத்துக்கள் (Vowels+Consonants): ", bufCharCode, lcCharCodeBufSize));	// List of Combined letters.
+	fprintf(fps, "50 600 moveto <%s> show\n", strps(pLan, pMyFont, u8"க கா கி கீ கு கூ கெ கே கை கொ கோ கௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 580 moveto <%s> show\n", strps(pLan, pMyFont, u8"ங ஙா ஙி ஙீ ஙு ஙூ ஙெ ஙே ஙை ஙொ ஙோ ஙௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 560 moveto <%s> show\n", strps(pLan, pMyFont, u8"ச சா சி சீ சு சூ செ சே சை சொ சோ சௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 540 moveto <%s> show\n", strps(pLan, pMyFont, u8"ஞ ஞா ஞி ஞீ ஞு ஞூ ஞெ ஞே ஞை ஞொ ஞோ ஞௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 520 moveto <%s> show\n", strps(pLan, pMyFont, u8"ட டா டி டீ டு டூ டெ டே டை டொ டோ டௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 500 moveto <%s> show\n", strps(pLan, pMyFont, u8"ண ணா ணி ணீ ணு ணூ ணெ ணே ணை ணொ ணோ ணௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 480 moveto <%s> show\n", strps(pLan, pMyFont, u8"த தா தி தீ து தூ தெ தே தை தொ தோ தௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 460 moveto <%s> show\n", strps(pLan, pMyFont, u8"ந நா நி நீ நு நூ நெ நே நை நொ நோ நௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 440 moveto <%s> show\n", strps(pLan, pMyFont, u8"ப பா பி பீ பு பூ பெ பே பை பொ போ பௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 420 moveto <%s> show\n", strps(pLan, pMyFont, u8"ம மா மி மீ மு மூ மெ மே மை மொ மோ மௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 400 moveto <%s> show\n", strps(pLan, pMyFont, u8"ய யா யி யீ யு யூ யெ யே யை யொ யோ யௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 380 moveto <%s> show\n", strps(pLan, pMyFont, u8"ர ரா ரி ரீ ரு ரூ ரெ ரே ரை ரொ ரோ ரௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 360 moveto <%s> show\n", strps(pLan, pMyFont, u8"ல லா லி லீ லு லூ லெ லே லை லொ லோ லௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 340 moveto <%s> show\n", strps(pLan, pMyFont, u8"வ வா வி வீ வு வூ வெ வே வை வொ வோ வௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 320 moveto <%s> show\n", strps(pLan, pMyFont, u8"ழ ழா ழி ழீ ழு ழூ ழெ ழே ழை ழொ ழோ ழௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 300 moveto <%s> show\n", strps(pLan, pMyFont, u8"ள ளா ளி ளீ ளு ளூ ளெ ளே ளை ளொ ளோ ளௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 280 moveto <%s> show\n", strps(pLan, pMyFont, u8"ற றா றி றீ று றூ றெ றே றை றொ றோ றௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 260 moveto <%s> show\n", strps(pLan, pMyFont, u8"ன னா னி னீ னு னூ னெ னே னை னொ னோ னௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 240 moveto <%s> show\n", strps(pLan, pMyFont, u8"ஶ ஶா ஶி ஶீ ஶு ஶூ ஶெ ஶே ஶை ஶொ ஶோ ஶௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 220 moveto <%s> show\n", strps(pLan, pMyFont, u8"ஜ ஜா ஜி ஜீ ஜு ஜூ ஜெ ஜே ஜை ஜொ ஜோ ஜௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 200 moveto <%s> show\n", strps(pLan, pMyFont, u8"ஷ ஷா ஷி ஷீ ஷு ஷூ ஷெ ஷே ஷை ஷொ ஷோ ஷௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 180 moveto <%s> show\n", strps(pLan, pMyFont, u8"ஸ ஸா ஸி ஸீ ஸு ஸூ ஸெ ஸே ஸை ஸொ ஸோ ஸௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 160 moveto <%s> show\n", strps(pLan, pMyFont, u8"ஹ ஹா ஹி ஹீ ஹு ஹூ ஹெ ஹே ஹை ஹொ ஹோ ஹௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+	fprintf(fps, "50 140 moveto <%s> show\n", strps(pLan, pMyFont, u8"க்ஷ க்ஷா க்ஷி க்ஷீ க்ஷு க்ஷூ க்ஷெ க்ஷே க்ஷை க்ஷொ க்ஷோ க்ஷௌ", bufCharCode, lcCharCodeBufSize));	// Combine letters.
+
+	fprintf(fps, "32 110 moveto <%s> show\n", strps(pLan, pMyFont, u8"எண்கள் (Numbers): ", bufCharCode, lcCharCodeBufSize));	// List of Consonants.
+	fprintf(fps, "50 90 moveto <%s> show\n", strps(pLan, pMyFont, u8"௦ 1 2  3  4  5  6  7  8  9  10 11  12   13  14   15   16   17  18   19    20", bufCharCode, lcCharCodeBufSize));	// Consonants.
+	fprintf(fps, "50 70 moveto <%s> show\n", strps(pLan, pMyFont, u8"௦ ௧ ௨ ௩ ௪ ௫ ௬ ௭ ௮ ௯ ௰ ௰௧ ௰௨ ௰௩ ௰௪ ௰௫ ௰௬ ௰௭ ௰௮ ௰௯ ௨௰", bufCharCode, lcCharCodeBufSize));	// Consonants.
+	fprintf(fps, "50 50 moveto <%s> show\n", strps(pLan, pMyFont, u8"9௦     100   1,000  100,000   1 million    1 trillion", bufCharCode, lcCharCodeBufSize));	// Consonants.
+	fprintf(fps, "50 30 moveto <%s> show\n", strps(pLan, pMyFont, u8"௯௰   ௱    ௲    ௱௲     ௲௲       ௲௲௲", bufCharCode, lcCharCodeBufSize));	// Consonants.
+
+	psFlushReport(fps, ++pagenum);
 }
 const char *getCIDfilenameWithoutPath(const char *pCIDfilename)
 {
@@ -503,7 +597,7 @@ int main(int argc, char* argv[])
     // utf8map filename.t42
     //
     if (argc == 1 || argc > 2) {
-#if _MSC_VER			// Visual Studio
+#if _MSC_VER			// Visual Studio	
         fprintf(stdout, "usage: utf8map filename.t42");
 #elif __GNUC__	|| __CYGWIN__		// gcc
         fprintf(stdout, "usage: ./utf8map filename.t42");
@@ -518,7 +612,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\nhit any key....");	getchar();
         return(1);				// exit with error 1
     }
-	const char *cidFilenameNoPath = getCIDfilenameWithoutPath(strCIDFontFile);
+	const char *cidFilenameNoPath = getCIDfilenameWithoutPath(strCIDFontFile);		// Points to filename without path
 	// find out the language and font 
 
 	ELang lan=ELang::eZero;								// Language of the cid-keyed font passed as argument.
@@ -541,20 +635,16 @@ int main(int argc, char* argv[])
 	}
     const short lcFileNameSize = 256;
     char psFilename[lcFileNameSize];
-    strcpy_s(psFilename, lcFileNameSize, strCIDFontFile);              // copy t42 file name
-    char* ptr2 = strstr(psFilename, ".t42");            memcpy(static_cast<void*>(ptr2 + 1), "ps", 3);       // replace ttf with ps.
+    strcpy_s(psFilename, lcFileNameSize, strCIDFontFile);										// copy t42 file name
+	const char* psFilenameNoPath = getCIDfilenameWithoutPath(psFilename);						// Points to filename without path
+	short len = static_cast<short>(strlen(psFilename) - strlen(psFilenameNoPath));				// remaining length
+	short remainignlen = lcFileNameSize - len;													// remaining length
+	sprintf_s(psFilename+len, remainignlen, "%s.ps", asMyFont[(int)lan][(int)myfont].name);		// create postscript file name with extension .ps.
     //printf("%s...\t%s...\n", t42Filenamet, psFilename); getchar();
 
-    FILE *fcid, *fps;
+    FILE *fps;
 
 #if _MSC_VER			// Visual Studio
-    // open t42 file to read
-    if (fopen_s(&fcid, strCIDFontFile, "r")) {
-        fprintf(stdout, "File name: %s\n", strCIDFontFile);
-        perror("The following error occurred");
-        return (1);
-    }
-    else fprintf(stdout, "File %s is opened for reading\n", strCIDFontFile);
     // open ps file to write
     if (fopen_s(&fps, psFilename, "w")) {
         fprintf(stdout, "File name: %s\n", psFilename);
@@ -564,13 +654,6 @@ int main(int argc, char* argv[])
     else fprintf(stdout, "File %s is opened for writing\n", psFilename);
 
 #elif __GNUC__	|| __CYGWIN__		// gcc
-    // open t42 file to read
-    if (!(fcid = fopen(strCIDFontFile, "r"))) {
-        fprintf(stdout, "File name: %s\n", strCIDFontFile);
-        perror("The following error occurred");
-        return (1);
-    }
-    else fprintf(stdout, "File %s is opened for writing\n", strCIDFontFile);
     // open ps file to write
     if (!(fps = fopen(psFilename, "w"))) {
         fprintf(stdout, "File name: %s\n", psFilename);
@@ -582,6 +665,7 @@ int main(int argc, char* argv[])
 #endif
 
 	psInitPostscript(fps);				// Initialize postscript
+	fileInsert(fps, strCIDFontFile);
 	fprintf(fps, "/%s {/%s findfont exch scalefont setfont} bind def\n", asMyFont[(int)lan][(int)myfont].name, asMyFont[(int)lan][(int)myfont].psname);		// findfont
 
 	switch (lan) {
@@ -636,5 +720,13 @@ int main(int argc, char* argv[])
 		}
 	}
 	fclose(fps);
+	fprintf(stdout, "\nExecution has been successfully completed.\n");
+	fprintf(stdout, "  '%s' is a postscript program file generated by this C++ program.\n", psFilename);
+#if _MSC_VER			// Visual Studio
+	fprintf(stdout, "  To execute '%s', invoke Ghostscript as 'gswin64c.exe %s %s'.\n", psFilenameNoPath, strCIDFontFile, psFilename);
+#elif __GNUC__	|| __CYGWIN__		// gcc
+	fprintf(stdout, "  To execute '%s', invoke Ghostscript as 'gs %s %s'.\n", psFilenameNoPath, strCIDFontFile, psFilename);
+#endif
+	exit(0);
 }
 
