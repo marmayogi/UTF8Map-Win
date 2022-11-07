@@ -670,7 +670,6 @@ int main(int argc, char* argv[])
 #endif
 
 	psInitPostscript(fps);				// Initialize postscript
-	fileInsert(fps, strCIDFontFile);
 	fprintf(fps, "/%s {/%s findfont exch scalefont setfont} bind def\n", asMyFont[(int)lan][(int)myfont].name, asMyFont[(int)lan][(int)myfont].psname);		// findfont
 
 	switch (lan) {
