@@ -95,16 +95,16 @@ This two-dimensional array of type `struct SMyFont` is declared and initialized 
 	// 2. Tamil language. After all Font names are entered, terminate with Zero entry.
 	{
 	//	NumGlyphs	name			Postscript name					file name in the disk.
-		{0,},																					
-		{534, "myNotoTamil",		"NotoSansTamil-Regular",		"NotoSansTamil-Regular.t42"},  // Google font.
-		{534, "myNotoTamilBold",	"NotoSansTamil-Bold",			"NotoSansTamil-Bold.t42"},  // Google font.	
-		{434, "myLathaTamil",		"Latha",						"latha.t42"},  // Microsoft font.				
-		{434, "myLathaTamilBold",	"Latha-Bold",					"lathab.t42"},  // Microsoft font.				
-		{0},																					
+		{0,},																								// Always begins with Zero entry
+		{534, "myNotoTamil",		"NotoSansTamil-Regular",		"NotoSansTamil-Regular.t42"},			// Google's Tamil Font (Regular)
+		{534, "myNotoTamilBold",	"NotoSansTamil-Bold",			"NotoSansTamil-Bold.t42"},				// Google's Tamil Font (Bold)
+		{434, "myLathaTamil",		"Latha",						"latha.t42"},							// Microsoft's Tamil Font (Regular)
+		{434, "myLathaTamilBold",	"Latha-Bold",					"lathab.t42"},							// Microsoft's Tamil Font (Bold)
+		{0},																								// Terminate with Zero entry.
 	},
 	// 3. Hindi language. After all Font names are entered, terminate with Zero entry.
 	{
-		{0,},											// Always begins with Zero entry
+		{0,},											// Always begins with Zero entry.
 		{0,},											// Terminate with Zero entry.
 	},
 
