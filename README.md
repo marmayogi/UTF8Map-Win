@@ -177,7 +177,7 @@ The function **up2cid** adopts the following procedure to determine the CID from
 9. Finally Unicode Point of slot zero of quad array maps to a Vowel. Refer `main.cpp` and see the code.
  
 ##### Technical Features
-- This utility is a console application developed on Microsoft Visual Studio Community 2022 (64-bit) Edition- Version 17.3.5 under Windows 10.
+- This utility is a console application developed on Microsoft Visual Studio Community 2022 (64-bit) Edition- Version 17.4.2 under Windows 10.
 - This utility is available in [Linux platform](https://github.com/marmayogi/UTF8Map-Linux) too.
 - Note that this program is 100% portable across Windows-10 and Linux. i.e. The source files (`main.ccp` and `mapunicode.h`) are same and identical across platforms.
 - Ghostscript version is [10.0.0 (64 bit)](https://www.ghostscript.com/releases/gsdnld.html) and GSView version is [5.0 (64 bit)](http://ghostgum.com.au/software/gsview.htm).
