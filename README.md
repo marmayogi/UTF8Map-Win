@@ -178,9 +178,9 @@ The function **up2cid** adopts the following procedure to determine the CID from
  
 ##### Technical Features
 - This utility is a console application developed on Microsoft Visual Studio Community 2022 (64-bit) Edition- Version 17.3.5 under Windows 10.
-- This utility is also available on Linux platform.
-- Note that this program is 100% portable across Windows-10 and Linux. i.e. The source files (main.ccp and mapunicode.h) are same and identical across platforms.
-- Ghostscript installed is 10.0.0 version (64 bit) and GSView is 5.0 version (64 bit).
+- This utility is available in [Linux platform](https://github.com/marmayogi/UTF8Map-Linux) too.
+- Note that this program is 100% portable across Windows-10 and Linux. i.e. The source files (`main.ccp` and `mapunicode.h`) are same and identical across platforms.
+- Ghostscript version is [10.0.0 (64 bit)](https://www.ghostscript.com/releases/gsdnld.html) and GSView version is [5.0 (64 bit)](http://ghostgum.com.au/software/gsview.htm).
 
 ##### Usage
 Create a folder `D:\cidfonts` in **D** drive (or any other drive) and store `NotoSansTamil-Regular.t42` and `latha.t42`. Now issue the following commands:
